@@ -15,6 +15,19 @@ final class ClockTimeTests: XCTestCase {
         }
     }
 
+    func testRelativeDatesAcrossTheInternationalDateLineAndLocalMidnight() {
+        let samoa = TimeZone(identifier: "Pacific/Pago_Pago")!
+        let kiritimati = TimeZone(identifier: "Pacific/Kiritimati")!
+        let instantBeforeMidnight = instant("2026-11-04T10:30:00Z")
+        XCTAssertEqual(ClockTime.dayDifference(at: instantBeforeMidnight, in: kiritimati, relativeTo: samoa), 2)
+        XCTAssertEqual(ClockTime.dayDifference(at: instantBeforeMidnight, in: samoa, relativeTo: kiritimati), -2)
+        XCTAssertEqual(ClockTime.dayDifference(at: instant("2026-11-04T11:00:00Z"), in: kiritimati, relativeTo: samoa), 1)
+
+        let newYork = TimeZone(identifier: "America/New_York")!
+        XCTAssertEqual(ClockTime.dayDifference(at: instant("2026-03-08T04:59:00Z"), in: .gmt, relativeTo: newYork), 1)
+        XCTAssertEqual(ClockTime.dayDifference(at: instant("2026-03-08T05:00:00Z"), in: .gmt, relativeTo: newYork), 0)
+    }
+
     func testPreviewAndFormattingAcrossBothDSTChanges() {
         let ny = TimeZone(identifier: "America/New_York")!
         for (utc, lastMinute, start, end) in [

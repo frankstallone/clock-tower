@@ -4,6 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 version=$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Packaging/Info.plist)
 minimum=$(/usr/libexec/PlistBuddy -c 'Print LSMinimumSystemVersion' Packaging/Info.plist)
+sdk_path=$(xcrun --sdk macosx --show-sdk-path)
+sdk_version=$(xcrun --sdk macosx --show-sdk-version)
 stage=$(mktemp -d "${TMPDIR:-/tmp}/clock-tower.XXXXXXXX")
 trap 'rm -rf "$stage"' EXIT
 app="$stage/Clock Tower.app"
@@ -15,8 +17,12 @@ plutil -lint "$contents/Info.plist"
 bins=()
 for arch in arm64 x86_64; do
     triple="$arch-apple-macosx$minimum"
-    swift build -c release --triple "$triple" --product ClockTower
+    # AppKit uses the linked SDK version to select modern control appearances.
+    swift build -c release --triple "$triple" --sdk "$sdk_path" --product ClockTower \
+        -Xlinker -platform_version -Xlinker macos -Xlinker "$minimum" -Xlinker "$sdk_version"
     bin=$(swift build -c release --triple "$triple" --show-bin-path)
+    versions=$(xcrun vtool -show-build "$bin/ClockTower" | awk '/minos|^[[:space:]]*sdk / {print $2}')
+    [[ "$versions" == "$minimum"$'\n'"$sdk_version" ]] || { echo "Unexpected $arch build versions: $versions" >&2; exit 1; }
     cp "$bin/ClockTower" "$stage/ClockTower-$arch"
     bins+=("$stage/ClockTower-$arch")
 done

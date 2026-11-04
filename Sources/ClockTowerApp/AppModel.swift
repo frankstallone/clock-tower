@@ -15,6 +15,7 @@ final class AppModel: ObservableObject {
     }
     @Published var now = Date()
     @Published var preview: Date?
+    @Published var isAddingCity = false
     @Published var message: String?
     @Published private(set) var loginEnabled = false
     @Published private(set) var loginNeedsApproval = false

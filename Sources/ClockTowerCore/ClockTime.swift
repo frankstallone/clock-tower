@@ -20,6 +20,14 @@ public enum ClockTime {
         return (4..<21).contains(calendar(in: zone).component(.hour, from: date))
     }
 
+    /// Compare the calendar dates at the same instant, including across the International Date Line.
+    public static func dayDifference(at date: Date, in city: TimeZone, relativeTo local: TimeZone = .autoupdatingCurrent) -> Int {
+        let utc = calendar(in: TimeZone.gmt)
+        let localDay = utc.startOfDay(for: date.addingTimeInterval(TimeInterval(local.secondsFromGMT(for: date))))
+        let cityDay = utc.startOfDay(for: date.addingTimeInterval(TimeInterval(city.secondsFromGMT(for: date))))
+        return utc.dateComponents([.day], from: localDay, to: cityDay).day!
+    }
+
     // The slider measures elapsed minutes from local midnight. The repeated hour on a
     // fall-back day has two positions, and no position represents a skipped spring hour.
     public static func previewRange(for date: Date, zone: TimeZone = .autoupdatingCurrent) -> ClosedRange<Double> {
